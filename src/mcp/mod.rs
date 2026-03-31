@@ -241,6 +241,71 @@ impl ServerHandler for AbridgeMcp {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bool_deserialize_from_true() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct T {
+            #[serde(deserialize_with = "bool_from_string_or_bool")]
+            v: bool,
+        }
+        let t: T = serde_json::from_str(r#"{"v": true}"#).unwrap();
+        assert!(t.v);
+    }
+
+    #[test]
+    fn bool_deserialize_from_false() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct T {
+            #[serde(deserialize_with = "bool_from_string_or_bool")]
+            v: bool,
+        }
+        let t: T = serde_json::from_str(r#"{"v": false}"#).unwrap();
+        assert!(!t.v);
+    }
+
+    #[test]
+    fn bool_deserialize_from_string_true() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct T {
+            #[serde(deserialize_with = "bool_from_string_or_bool")]
+            v: bool,
+        }
+        let t: T = serde_json::from_str(r#"{"v": "true"}"#).unwrap();
+        assert!(t.v);
+    }
+
+    #[test]
+    fn bool_deserialize_from_string_false() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct T {
+            #[serde(deserialize_with = "bool_from_string_or_bool")]
+            v: bool,
+        }
+        let t: T = serde_json::from_str(r#"{"v": "false"}"#).unwrap();
+        assert!(!t.v);
+    }
+
+    #[test]
+    fn bool_deserialize_invalid_string_is_err() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct T {
+            #[serde(deserialize_with = "bool_from_string_or_bool")]
+            v: bool,
+        }
+        assert!(serde_json::from_str::<T>(r#"{"v": "yes"}"#).is_err());
+        assert!(serde_json::from_str::<T>(r#"{"v": "1"}"#).is_err());
+    }
+}
+
 /// Start the MCP server on stdio.
 pub async fn serve() -> Result<()> {
     tracing::info!("Starting abridge MCP server on stdio");

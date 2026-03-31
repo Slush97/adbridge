@@ -142,3 +142,103 @@ pub async fn run(args: LogArgs) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // -- parse_level_filter --
+
+    #[test]
+    fn level_filter_full_names() {
+        assert_eq!(parse_level_filter("verbose"), "*:V");
+        assert_eq!(parse_level_filter("debug"), "*:D");
+        assert_eq!(parse_level_filter("info"), "*:I");
+        assert_eq!(parse_level_filter("warn"), "*:W");
+        assert_eq!(parse_level_filter("error"), "*:E");
+        assert_eq!(parse_level_filter("fatal"), "*:F");
+    }
+
+    #[test]
+    fn level_filter_short_names() {
+        assert_eq!(parse_level_filter("v"), "*:V");
+        assert_eq!(parse_level_filter("d"), "*:D");
+        assert_eq!(parse_level_filter("i"), "*:I");
+        assert_eq!(parse_level_filter("w"), "*:W");
+        assert_eq!(parse_level_filter("e"), "*:E");
+        assert_eq!(parse_level_filter("f"), "*:F");
+    }
+
+    #[test]
+    fn level_filter_case_insensitive() {
+        assert_eq!(parse_level_filter("INFO"), "*:I");
+        assert_eq!(parse_level_filter("Error"), "*:E");
+        assert_eq!(parse_level_filter("VERBOSE"), "*:V");
+    }
+
+    #[test]
+    fn level_filter_unknown_defaults_to_verbose() {
+        assert_eq!(parse_level_filter("unknown"), "*:V");
+        assert_eq!(parse_level_filter(""), "*:V");
+        assert_eq!(parse_level_filter("trace"), "*:V");
+    }
+
+    // -- parse_logcat_line --
+
+    #[test]
+    fn parse_standard_threadtime_line() {
+        let line = "03-31 00:12:34.567  1234  5678 I MyTag   : Hello world";
+        let entry = parse_logcat_line(line).unwrap();
+        assert_eq!(entry.timestamp, "03-31 00:12:34.567");
+        assert_eq!(entry.pid, "1234");
+        assert_eq!(entry.tid, "5678");
+        assert_eq!(entry.level, "I");
+        assert_eq!(entry.tag, "MyTag");
+        assert_eq!(entry.message, "Hello world");
+    }
+
+    #[test]
+    fn parse_empty_line_returns_none() {
+        assert!(parse_logcat_line("").is_none());
+        assert!(parse_logcat_line("   ").is_none());
+    }
+
+    #[test]
+    fn parse_separator_line_returns_none() {
+        assert!(parse_logcat_line("--------- beginning of main").is_none());
+        assert!(parse_logcat_line("--------- beginning of system").is_none());
+    }
+
+    #[test]
+    fn parse_line_without_colon_falls_back() {
+        let line = "some random text without colon separator";
+        let entry = parse_logcat_line(line).unwrap();
+        assert_eq!(entry.message, line);
+        assert!(entry.timestamp.is_empty());
+        assert!(entry.tag.is_empty());
+    }
+
+    #[test]
+    fn parse_short_prefix_falls_back() {
+        let line = "short: message here";
+        let entry = parse_logcat_line(line).unwrap();
+        // Not enough prefix parts for structured parse, falls back
+        assert_eq!(entry.message, "short: message here");
+    }
+
+    #[test]
+    fn parse_error_level_line() {
+        let line = "03-31 12:00:00.000  9999  9999 E CrashTag: NullPointerException";
+        let entry = parse_logcat_line(line).unwrap();
+        assert_eq!(entry.level, "E");
+        assert_eq!(entry.tag, "CrashTag");
+        assert_eq!(entry.message, "NullPointerException");
+    }
+
+    #[test]
+    fn parse_message_with_colons() {
+        let line = "03-31 12:00:00.000  1000  1000 D NetTag  : url: https://example.com: ok";
+        let entry = parse_logcat_line(line).unwrap();
+        assert_eq!(entry.message, "url: https://example.com: ok");
+    }
+}
