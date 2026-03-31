@@ -55,8 +55,8 @@ cargo install adbridge
 ### From source
 
 ```sh
-git clone https://github.com/Slush97/abridge.git
-cd abridge
+git clone https://github.com/Slush97/adbridge.git
+cd adbridge
 cargo install --path .
 ```
 
