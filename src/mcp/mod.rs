@@ -1,6 +1,7 @@
 use anyhow::Result;
+use base64::Engine;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
-use rmcp::model::{ServerCapabilities, ServerInfo};
+use rmcp::model::{CallToolResult, Content, ServerCapabilities, ServerInfo};
 use rmcp::{tool, tool_handler, tool_router, ServerHandler, ServiceExt};
 use rmcp::schemars::{self, JsonSchema};
 use serde::Deserialize;
@@ -68,15 +69,37 @@ pub struct CrashParams {
 
 #[tool_router]
 impl AbridgeMcp {
-    #[tool(description = "Capture a screenshot from the connected Android device. Returns base64 PNG, optional OCR text, and optional view hierarchy XML.")]
+    #[tool(description = "Capture a screenshot from the connected Android device. Returns the image, optional OCR text, and optional view hierarchy XML.")]
     async fn device_screenshot(
         &self,
         Parameters(params): Parameters<ScreenshotParams>,
-    ) -> String {
-        match crate::screen::capture(params.ocr, params.hierarchy) {
-            Ok(result) => serde_json::to_string_pretty(&result).unwrap_or_else(|e| e.to_string()),
-            Err(e) => format!("Error capturing screenshot: {e}"),
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let png_data = crate::screen::capture_screenshot()
+            .map_err(|e| rmcp::ErrorData::new(rmcp::model::ErrorCode::INTERNAL_ERROR, format!("Screenshot failed: {e}"), None))?;
+
+        let mut contents = Vec::new();
+
+        // Return image as an MCP image content block
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&png_data);
+        contents.push(Content::image(b64, "image/png"));
+
+        // OCR text
+        if params.ocr {
+            match crate::screen::ocr_image(&png_data) {
+                Ok(text) => contents.push(Content::text(format!("--- OCR Text ---\n{text}"))),
+                Err(e) => contents.push(Content::text(format!("OCR failed: {e}"))),
+            }
         }
+
+        // View hierarchy
+        if params.hierarchy {
+            match crate::screen::dump_hierarchy() {
+                Ok(xml) => contents.push(Content::text(format!("--- View Hierarchy ---\n{xml}"))),
+                Err(e) => contents.push(Content::text(format!("Hierarchy dump failed: {e}"))),
+            }
+        }
+
+        Ok(CallToolResult::success(contents))
     }
 
     #[tool(description = "Get filtered logcat entries from the connected Android device. Can filter by app, tag, and log level.")]

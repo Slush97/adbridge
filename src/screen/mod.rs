@@ -58,12 +58,29 @@ pub fn ocr_image(png_data: &[u8]) -> Result<String> {
 }
 
 /// Full screen capture pipeline.
-pub fn capture(ocr: bool, hierarchy: bool) -> Result<ScreenCapture> {
+/// If `include_base64` is false, the screenshot is saved to a temp file instead.
+pub fn capture(ocr: bool, hierarchy: bool, include_base64: bool) -> Result<ScreenCapture> {
     let png_data = capture_screenshot()?;
 
-    let image_base64 = Some(
-        base64::engine::general_purpose::STANDARD.encode(&png_data),
-    );
+    let image_base64 = if include_base64 {
+        Some(base64::engine::general_purpose::STANDARD.encode(&png_data))
+    } else {
+        None
+    };
+
+    let saved_to = if !include_base64 {
+        let path = format!(
+            "/tmp/abridge_screenshot_{}.png",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis()
+        );
+        std::fs::write(&path, &png_data)?;
+        Some(path)
+    } else {
+        None
+    };
 
     let ocr_text = if ocr {
         Some(ocr_image(&png_data)?)
@@ -81,13 +98,14 @@ pub fn capture(ocr: bool, hierarchy: bool) -> Result<ScreenCapture> {
         image_base64,
         ocr_text,
         hierarchy: hierarchy_xml,
-        saved_to: None,
+        saved_to,
     })
 }
 
 /// CLI entry point.
 pub async fn run(args: ScreenArgs) -> Result<()> {
-    let mut result = capture(args.ocr, args.hierarchy)?;
+    let include_base64 = args.output.is_none() && args.json;
+    let mut result = capture(args.ocr, args.hierarchy, include_base64)?;
 
     if let Some(ref path) = args.output {
         let png_data = capture_screenshot()?;
