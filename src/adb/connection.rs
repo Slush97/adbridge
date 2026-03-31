@@ -1,0 +1,45 @@
+use adb_client::server::ADBServer;
+use anyhow::{Context, Result};
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
+pub struct DeviceInfo {
+    pub serial: String,
+    pub model: String,
+    pub android_version: String,
+    pub sdk_version: String,
+}
+
+/// List connected devices with basic info.
+pub fn list_devices() -> Result<Vec<DeviceInfo>> {
+    let mut server = ADBServer::default();
+    let devices = server
+        .devices()
+        .context("Failed to query ADB for devices")?;
+
+    let mut infos = Vec::new();
+    for device in devices {
+        let serial = device.identifier.to_string();
+        infos.push(DeviceInfo {
+            serial,
+            model: String::new(),
+            android_version: String::new(),
+            sdk_version: String::new(),
+        });
+    }
+
+    // Enrich with props from each device
+    for info in &mut infos {
+        if let Ok(model) = super::shell_str("getprop ro.product.model") {
+            info.model = model.trim().to_string();
+        }
+        if let Ok(ver) = super::shell_str("getprop ro.build.version.release") {
+            info.android_version = ver.trim().to_string();
+        }
+        if let Ok(sdk) = super::shell_str("getprop ro.build.version.sdk") {
+            info.sdk_version = sdk.trim().to_string();
+        }
+    }
+
+    Ok(infos)
+}
