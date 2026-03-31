@@ -3,23 +3,6 @@
 version = 4
 
 [[package]]
-name = "abridge"
-version = "0.1.0"
-dependencies = [
- "adb_client",
- "anyhow",
- "base64",
- "clap",
- "leptess",
- "rmcp",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "adb_client"
 version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -42,6 +25,23 @@ dependencies = [
  "rustls-pki-types",
  "sha1",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "adbridge"
+version = "0.1.0"
+dependencies = [
+ "adb_client",
+ "anyhow",
+ "base64",
+ "clap",
+ "leptess",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-# abridge
+# adbridge
 
 Android Bridge for AI-Assisted Development. A CLI tool and MCP server that gives AI coding assistants direct access to your Android device: screenshots, OCR, logcat, input control, and device state inspection.
 
@@ -6,7 +6,7 @@ No more manually screenshotting, copy-pasting logs, or describing what's on scre
 
 ## What it does
 
-abridge runs as a **standalone CLI** or as an **MCP server** that exposes your connected Android device as structured, queryable tools. Any MCP-compatible AI tool (Claude Code, Cursor, Cline, etc.) can then:
+adbridge runs as a **standalone CLI** or as an **MCP server** that exposes your connected Android device as structured, queryable tools. Any MCP-compatible AI tool (Claude Code, Cursor, Cline, etc.) can then:
 
 - Capture screenshots and extract text via OCR
 - Read filtered logcat entries
@@ -18,7 +18,7 @@ abridge runs as a **standalone CLI** or as an **MCP server** that exposes your c
 ```
                           ADB
  ┌──────────────┐   native protocol   ┌──────────────┐
- │   Android    │◄────────────────────►│   abridge    │
+ │   Android    │◄────────────────────►│  adbridge    │
  │   Device     │                      │   daemon     │
  └──────────────┘                      └──────┬───────┘
                                               │
@@ -49,6 +49,12 @@ abridge runs as a **standalone CLI** or as an **MCP server** that exposes your c
 ### From source
 
 ```sh
+cargo install adbridge
+```
+
+### From source
+
+```sh
 git clone https://github.com/Slush97/abridge.git
 cd abridge
 cargo install --path .
@@ -57,8 +63,8 @@ cargo install --path .
 ### Verify
 
 ```sh
-abridge --version
-abridge --help
+adbridge --version
+adbridge --help
 ```
 
 ## CLI Usage
@@ -67,81 +73,81 @@ abridge --help
 
 ```sh
 # Capture screenshot, save to file
-abridge screen --output screenshot.png
+adbridge screen --output screenshot.png
 
 # Capture with OCR text extraction
-abridge screen --ocr
+adbridge screen --ocr
 
 # Full context: screenshot + OCR + view hierarchy as JSON
-abridge screen --ocr --hierarchy --json
+adbridge screen --ocr --hierarchy --json
 ```
 
 ### Logcat
 
 ```sh
 # Recent errors
-abridge log --level error --lines 20
+adbridge log --level error --lines 20
 
 # Filter by app
-abridge log --app com.myapp --level warn
+adbridge log --app com.myapp --level warn
 
 # Filter by tag, JSON output
-abridge log --tag NetworkManager --json
+adbridge log --tag NetworkManager --json
 ```
 
 ### Input
 
 ```sh
 # Type text on device
-abridge input text "hello world"
+adbridge input text "hello world"
 
 # Tap coordinates
-abridge input tap 540 1200
+adbridge input tap 540 1200
 
 # Swipe (scroll down)
-abridge input swipe 540 1500 540 500 --duration 300
+adbridge input swipe 540 1500 540 500 --duration 300
 
 # Hardware keys
-abridge input key home
-abridge input key back
+adbridge input key home
+adbridge input key back
 
 # Set clipboard
-abridge input clip "copied text"
+adbridge input clip "copied text"
 ```
 
 ### Device State
 
 ```sh
 # Current activity, fragments, display info
-abridge state
+adbridge state
 
 # Include memory stats, as JSON
-abridge state --memory --json
+adbridge state --memory --json
 ```
 
 ### Devices
 
 ```sh
 # List connected devices
-abridge devices
+adbridge devices
 
 # As JSON
-abridge devices --json
+adbridge devices --json
 ```
 
 ### Crash Report
 
 ```sh
 # Full crash context: stacktrace + recent errors + screenshot
-abridge crash --json
+adbridge crash --json
 
 # Pipe into an AI for analysis
-abridge crash --json | claude "what caused this crash?"
+adbridge crash --json | claude "what caused this crash?"
 ```
 
 ## MCP Server
 
-abridge exposes 6 tools over MCP's stdio transport:
+adbridge exposes 6 tools over MCP's stdio transport:
 
 | Tool | Description |
 |------|-------------|
@@ -159,8 +165,8 @@ Add to `~/.mcp.json`:
 ```json
 {
   "mcpServers": {
-    "abridge": {
-      "command": "abridge",
+    "adbridge": {
+      "command": "adbridge",
       "args": ["serve"]
     }
   }
@@ -179,10 +185,10 @@ Restart Claude Code. You can now say things like:
 
 ### Other MCP clients
 
-Any client supporting MCP stdio transport can use abridge. The server starts with:
+Any client supporting MCP stdio transport can use adbridge. The server starts with:
 
 ```sh
-abridge serve
+adbridge serve
 ```
 
 ## How it works

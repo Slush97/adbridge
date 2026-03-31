@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(
-    name = "abridge",
+    name = "adbridge",
     about = "Android Bridge for AI-Assisted Development",
     version
 )]

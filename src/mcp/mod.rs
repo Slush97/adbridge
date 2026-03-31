@@ -227,7 +227,7 @@ impl AbridgeMcp {
                 // Save screenshot to temp file instead
                 if let Ok(png) = crate::screen::capture_screenshot() {
                     let path = format!(
-                        "/tmp/abridge_crash_{}.png",
+                        "/tmp/adbridge_crash_{}.png",
                         std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
@@ -319,7 +319,7 @@ mod tests {
 
 /// Start the MCP server on stdio.
 pub async fn serve() -> Result<()> {
-    tracing::info!("Starting abridge MCP server on stdio");
+    tracing::info!("Starting adbridge MCP server on stdio");
 
     let service = AbridgeMcp::new();
     let server = service.serve(rmcp::transport::stdio()).await?;

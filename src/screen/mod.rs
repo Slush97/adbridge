@@ -39,7 +39,7 @@ pub fn ocr_image(png_data: &[u8]) -> Result<String> {
     use leptess::LepTess;
     use std::io::Write;
 
-    let tmp_path = format!("/tmp/abridge_ocr_{}.png", std::process::id());
+    let tmp_path = format!("/tmp/adbridge_ocr_{}.png", std::process::id());
     let mut file = std::fs::File::create(&tmp_path)?;
     file.write_all(png_data)?;
     drop(file);
@@ -68,7 +68,7 @@ pub fn capture(ocr: bool, hierarchy: bool, include_base64: bool) -> Result<Scree
 
     let saved_to = if !include_base64 {
         let path = format!(
-            "/tmp/abridge_screenshot_{}.png",
+            "/tmp/adbridge_screenshot_{}.png",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
