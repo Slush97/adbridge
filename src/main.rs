@@ -27,6 +27,7 @@ async fn main() -> Result<()> {
         Command::Input(args) => input::run(args).await,
         Command::State(args) => state::run(args).await,
         Command::Crash(args) => state::crash(args).await,
+        Command::Devices(args) => adb::connection::run(args).await,
         Command::Serve => mcp::serve().await,
     }
 }

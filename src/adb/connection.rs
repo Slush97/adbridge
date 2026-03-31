@@ -2,6 +2,8 @@ use adb_client::server::ADBServer;
 use anyhow::{Context, Result};
 use serde::Serialize;
 
+use crate::cli::DevicesArgs;
+
 #[derive(Debug, Serialize)]
 pub struct DeviceInfo {
     pub serial: String,
@@ -42,4 +44,24 @@ pub fn list_devices() -> Result<Vec<DeviceInfo>> {
     }
 
     Ok(infos)
+}
+
+/// CLI entry point for `devices` command.
+pub async fn run(args: DevicesArgs) -> Result<()> {
+    let devices = list_devices()?;
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&devices)?);
+    } else if devices.is_empty() {
+        println!("No devices connected");
+    } else {
+        for d in &devices {
+            println!(
+                "{} - {} (Android {} / SDK {})",
+                d.serial, d.model, d.android_version, d.sdk_version
+            );
+        }
+    }
+
+    Ok(())
 }

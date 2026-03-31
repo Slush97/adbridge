@@ -31,17 +31,3 @@ pub fn shell_str(command: &str) -> Result<String> {
     Ok(String::from_utf8_lossy(&output).to_string())
 }
 
-/// Pull a file from the device into memory.
-pub fn pull(remote_path: &str) -> Result<Vec<u8>> {
-    let mut server = server()?;
-    let mut device = server
-        .get_device()
-        .context("No device connected")?;
-
-    let mut buf = Vec::new();
-    device
-        .pull(&remote_path, &mut buf)
-        .with_context(|| format!("Failed to pull {remote_path}"))?;
-
-    Ok(buf)
-}

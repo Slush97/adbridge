@@ -80,10 +80,10 @@ pub struct InputParams {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-pub struct CrashParams {
-    /// Path to source root for stacktrace mapping
-    pub source_root: Option<String>,
-}
+pub struct CrashParams {}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct DeviceInfoParams {}
 
 #[tool_router]
 impl AbridgeMcp {
@@ -189,6 +189,19 @@ impl AbridgeMcp {
         match result {
             Ok(()) => format!("OK: {} '{}'", params.r#type, params.value),
             Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "List connected Android devices with model, Android version, and SDK version.")]
+    async fn device_info(
+        &self,
+        Parameters(_params): Parameters<DeviceInfoParams>,
+    ) -> String {
+        match crate::adb::connection::list_devices() {
+            Ok(devices) => {
+                serde_json::to_string_pretty(&devices).unwrap_or_else(|e| e.to_string())
+            }
+            Err(e) => format!("Error listing devices: {e}"),
         }
     }
 

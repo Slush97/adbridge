@@ -28,8 +28,18 @@ pub enum Command {
     /// Get crash context (stacktrace + screenshot + recent actions)
     Crash(CrashArgs),
 
+    /// List connected Android devices
+    Devices(DevicesArgs),
+
     /// Start MCP server (stdio transport)
     Serve,
+}
+
+#[derive(clap::Args)]
+pub struct DevicesArgs {
+    /// Output as JSON
+    #[arg(long, default_value_t = false)]
+    pub json: bool,
 }
 
 #[derive(clap::Args)]
