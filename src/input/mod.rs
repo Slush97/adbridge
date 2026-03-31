@@ -30,9 +30,8 @@ fn escape_for_input(text: &str) -> String {
     text.chars()
         .map(|c| match c {
             ' ' => "%s".to_string(),
-            '\'' | '"' | '\\' | '`' | '$' | '!' | '(' | ')' | '&'
-            | '|' | ';' | '<' | '>' | '{' | '}' | '[' | ']' | '#'
-            | '~' | '?' | '*' => format!("\\{c}"),
+            '\'' | '"' | '\\' | '`' | '$' | '!' | '(' | ')' | '&' | '|' | ';' | '<' | '>' | '{'
+            | '}' | '[' | ']' | '#' | '~' | '?' | '*' => format!("\\{c}"),
             _ => c.to_string(),
         })
         .collect()
@@ -41,15 +40,13 @@ fn escape_for_input(text: &str) -> String {
 /// Send text input to the device.
 pub fn input_text(text: &str) -> Result<()> {
     let escaped = escape_for_input(text);
-    adb::shell_str(&format!("input text {escaped}"))
-        .context("Failed to send text input")?;
+    adb::shell_str(&format!("input text {escaped}")).context("Failed to send text input")?;
     Ok(())
 }
 
 /// Send a tap at coordinates.
 pub fn tap(x: u32, y: u32) -> Result<()> {
-    adb::shell_str(&format!("input tap {x} {y}"))
-        .context("Failed to send tap")?;
+    adb::shell_str(&format!("input tap {x} {y}")).context("Failed to send tap")?;
     Ok(())
 }
 
@@ -63,8 +60,7 @@ pub fn swipe(x1: u32, y1: u32, x2: u32, y2: u32, duration_ms: u32) -> Result<()>
 /// Send a key event.
 pub fn key(name: &str) -> Result<()> {
     let code = keycode_for(name)?;
-    adb::shell_str(&format!("input keyevent {code}"))
-        .context("Failed to send key event")?;
+    adb::shell_str(&format!("input keyevent {code}")).context("Failed to send key event")?;
     Ok(())
 }
 
@@ -197,9 +193,6 @@ mod tests {
 
     #[test]
     fn escape_mixed_content() {
-        assert_eq!(
-            escape_for_input("hello world!"),
-            "hello%sworld\\!"
-        );
+        assert_eq!(escape_for_input("hello world!"), "hello%sworld\\!");
     }
 }

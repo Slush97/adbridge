@@ -30,4 +30,3 @@ pub fn shell_str(command: &str) -> Result<String> {
     let output = shell(command)?;
     Ok(String::from_utf8_lossy(&output).to_string())
 }
-

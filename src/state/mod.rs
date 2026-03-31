@@ -40,16 +40,16 @@ pub fn current_activity() -> Result<String> {
 
 /// Get all resumed activities.
 pub fn resumed_activities() -> Result<Vec<String>> {
-    let output = adb::shell_str(
-        "dumpsys activity activities | grep -E 'mResumedActivity|ResumedActivity'",
-    )?;
+    let output =
+        adb::shell_str("dumpsys activity activities | grep -E 'mResumedActivity|ResumedActivity'")?;
     Ok(output.lines().map(|l| l.trim().to_string()).collect())
 }
 
 /// Get fragment backstack info for the foreground app.
 pub fn fragment_backstack() -> Result<String> {
-    let output =
-        adb::shell_str("dumpsys activity top | grep -E 'Added Fragments|Back Stack|#[0-9]+:' | head -20")?;
+    let output = adb::shell_str(
+        "dumpsys activity top | grep -E 'Added Fragments|Back Stack|#[0-9]+:' | head -20",
+    )?;
     Ok(output.trim().to_string())
 }
 
@@ -60,8 +60,7 @@ pub fn display_info() -> Result<String> {
     let density = adb::shell_str("wm density").unwrap_or_default();
     let result = format!("{} {}", size.trim(), density.trim());
     if result.trim().is_empty() {
-        let output =
-            adb::shell_str("dumpsys display | grep -E 'mBaseDisplayInfo'")?;
+        let output = adb::shell_str("dumpsys display | grep -E 'mBaseDisplayInfo'")?;
         // Truncate to first 500 chars to avoid massive responses
         Ok(output.trim().chars().take(500).collect())
     } else {

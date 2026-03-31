@@ -31,8 +31,7 @@ pub fn capture_screenshot() -> Result<Vec<u8>> {
 
 /// Dump the view hierarchy via uiautomator.
 pub fn dump_hierarchy() -> Result<String> {
-    adb::shell_str("uiautomator dump /dev/tty 2>/dev/null")
-        .context("Failed to dump view hierarchy")
+    adb::shell_str("uiautomator dump /dev/tty 2>/dev/null").context("Failed to dump view hierarchy")
 }
 
 /// Run OCR on a PNG image buffer using leptess.
@@ -40,17 +39,13 @@ pub fn ocr_image(png_data: &[u8]) -> Result<String> {
     use leptess::LepTess;
     use std::io::Write;
 
-    let tmp_path = format!(
-        "/tmp/abridge_ocr_{}.png",
-        std::process::id()
-    );
+    let tmp_path = format!("/tmp/abridge_ocr_{}.png", std::process::id());
     let mut file = std::fs::File::create(&tmp_path)?;
     file.write_all(png_data)?;
     drop(file);
 
-    let mut lt = LepTess::new(None, "eng").context(
-        "Failed to initialize Tesseract. Is tesseract-ocr and tessdata installed?",
-    )?;
+    let mut lt = LepTess::new(None, "eng")
+        .context("Failed to initialize Tesseract. Is tesseract-ocr and tessdata installed?")?;
     lt.set_image(&tmp_path)
         .context("Failed to load image for OCR")?;
 

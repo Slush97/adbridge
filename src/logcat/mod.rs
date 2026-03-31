@@ -101,10 +101,7 @@ pub fn fetch(app: Option<&str>, tag: Option<&str>, level: &str, lines: u32) -> R
 
     let output = adb::shell_str(&cmd).context("Failed to read logcat")?;
 
-    let mut entries: Vec<LogEntry> = output
-        .lines()
-        .filter_map(parse_logcat_line)
-        .collect();
+    let mut entries: Vec<LogEntry> = output.lines().filter_map(parse_logcat_line).collect();
 
     // Filter by tag if specified
     if let Some(tag_filter) = tag {

@@ -2,12 +2,14 @@ use anyhow::Result;
 use base64::Engine;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
 use rmcp::model::{CallToolResult, Content, ServerCapabilities, ServerInfo};
-use rmcp::{tool, tool_handler, tool_router, ServerHandler, ServiceExt};
 use rmcp::schemars::{self, JsonSchema};
+use rmcp::{tool, tool_handler, tool_router, ServerHandler, ServiceExt};
 use serde::Deserialize;
 
 /// Deserialize a bool that might arrive as a string "true"/"false" from MCP clients.
-fn bool_from_string_or_bool<'de, D: serde::Deserializer<'de>>(deserializer: D) -> std::result::Result<bool, D::Error> {
+fn bool_from_string_or_bool<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<bool, D::Error> {
     use serde::de;
 
     struct BoolVisitor;
@@ -16,9 +18,15 @@ fn bool_from_string_or_bool<'de, D: serde::Deserializer<'de>>(deserializer: D) -
         fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             f.write_str("a boolean or string \"true\"/\"false\"")
         }
-        fn visit_bool<E: de::Error>(self, v: bool) -> std::result::Result<bool, E> { Ok(v) }
+        fn visit_bool<E: de::Error>(self, v: bool) -> std::result::Result<bool, E> {
+            Ok(v)
+        }
         fn visit_str<E: de::Error>(self, v: &str) -> std::result::Result<bool, E> {
-            match v { "true" => Ok(true), "false" => Ok(false), _ => Err(E::custom(format!("expected true/false, got {v}"))) }
+            match v {
+                "true" => Ok(true),
+                "false" => Ok(false),
+                _ => Err(E::custom(format!("expected true/false, got {v}"))),
+            }
         }
     }
     deserializer.deserialize_any(BoolVisitor)
@@ -87,13 +95,20 @@ pub struct DeviceInfoParams {}
 
 #[tool_router]
 impl AbridgeMcp {
-    #[tool(description = "Capture a screenshot from the connected Android device. Returns the image, optional OCR text, and optional view hierarchy XML.")]
+    #[tool(
+        description = "Capture a screenshot from the connected Android device. Returns the image, optional OCR text, and optional view hierarchy XML."
+    )]
     async fn device_screenshot(
         &self,
         Parameters(params): Parameters<ScreenshotParams>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let png_data = crate::screen::capture_screenshot()
-            .map_err(|e| rmcp::ErrorData::new(rmcp::model::ErrorCode::INTERNAL_ERROR, format!("Screenshot failed: {e}"), None))?;
+        let png_data = crate::screen::capture_screenshot().map_err(|e| {
+            rmcp::ErrorData::new(
+                rmcp::model::ErrorCode::INTERNAL_ERROR,
+                format!("Screenshot failed: {e}"),
+                None,
+            )
+        })?;
 
         let mut contents = Vec::new();
 
@@ -120,11 +135,10 @@ impl AbridgeMcp {
         Ok(CallToolResult::success(contents))
     }
 
-    #[tool(description = "Get filtered logcat entries from the connected Android device. Can filter by app, tag, and log level.")]
-    async fn device_logcat(
-        &self,
-        Parameters(params): Parameters<LogcatParams>,
-    ) -> String {
+    #[tool(
+        description = "Get filtered logcat entries from the connected Android device. Can filter by app, tag, and log level."
+    )]
+    async fn device_logcat(&self, Parameters(params): Parameters<LogcatParams>) -> String {
         match crate::logcat::fetch(
             params.app.as_deref(),
             params.tag.as_deref(),
@@ -136,7 +150,9 @@ impl AbridgeMcp {
         }
     }
 
-    #[tool(description = "Get current device state: focused activity, fragment backstack, display info, and memory stats.")]
+    #[tool(
+        description = "Get current device state: focused activity, fragment backstack, display info, and memory stats."
+    )]
     async fn device_state(&self) -> String {
         match crate::state::get_state(true) {
             Ok(result) => serde_json::to_string_pretty(&result).unwrap_or_else(|e| e.to_string()),
@@ -144,11 +160,10 @@ impl AbridgeMcp {
         }
     }
 
-    #[tool(description = "Send input to the Android device. Types: 'text' (type text), 'tap' (value='x,y'), 'swipe' (value='x1,y1,x2,y2'), 'key' (value=home/back/enter/menu), 'clip' (set clipboard).")]
-    async fn device_input(
-        &self,
-        Parameters(params): Parameters<InputParams>,
-    ) -> String {
+    #[tool(
+        description = "Send input to the Android device. Types: 'text' (type text), 'tap' (value='x,y'), 'swipe' (value='x1,y1,x2,y2'), 'key' (value=home/back/enter/menu), 'clip' (set clipboard)."
+    )]
+    async fn device_input(&self, Parameters(params): Parameters<InputParams>) -> String {
         let result = match params.r#type.as_str() {
             "text" => crate::input::input_text(&params.value),
             "tap" => {
@@ -192,24 +207,20 @@ impl AbridgeMcp {
         }
     }
 
-    #[tool(description = "List connected Android devices with model, Android version, and SDK version.")]
-    async fn device_info(
-        &self,
-        Parameters(_params): Parameters<DeviceInfoParams>,
-    ) -> String {
+    #[tool(
+        description = "List connected Android devices with model, Android version, and SDK version."
+    )]
+    async fn device_info(&self, Parameters(_params): Parameters<DeviceInfoParams>) -> String {
         match crate::adb::connection::list_devices() {
-            Ok(devices) => {
-                serde_json::to_string_pretty(&devices).unwrap_or_else(|e| e.to_string())
-            }
+            Ok(devices) => serde_json::to_string_pretty(&devices).unwrap_or_else(|e| e.to_string()),
             Err(e) => format!("Error listing devices: {e}"),
         }
     }
 
-    #[tool(description = "Get the most recent crash report: stacktrace, current activity, recent error logs, and a screenshot saved to /tmp.")]
-    async fn device_crash_report(
-        &self,
-        Parameters(_params): Parameters<CrashParams>,
-    ) -> String {
+    #[tool(
+        description = "Get the most recent crash report: stacktrace, current activity, recent error logs, and a screenshot saved to /tmp."
+    )]
+    async fn device_crash_report(&self, Parameters(_params): Parameters<CrashParams>) -> String {
         // Don't include base64 screenshot — save to file to avoid token limits
         match crate::state::get_crash_report(false) {
             Ok(mut report) => {
@@ -311,9 +322,7 @@ pub async fn serve() -> Result<()> {
     tracing::info!("Starting abridge MCP server on stdio");
 
     let service = AbridgeMcp::new();
-    let server = service
-        .serve(rmcp::transport::stdio())
-        .await?;
+    let server = service.serve(rmcp::transport::stdio()).await?;
     server.waiting().await?;
 
     Ok(())
