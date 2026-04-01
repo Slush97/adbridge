@@ -8,7 +8,8 @@ No more manually screenshotting, copy-pasting logs, or describing what's on scre
 
 adbridge runs as a **standalone CLI** or as an **MCP server** that exposes your connected Android device as structured, queryable tools. Any MCP-compatible AI tool (Claude Code, Cursor, Cline, etc.) can then:
 
-- Capture screenshots and extract text via OCR
+- Capture screenshots (auto-compressed JPEG for token efficiency) and extract text via OCR
+- Parse interactive UI elements with tap coordinates from the view hierarchy
 - Read filtered logcat entries
 - Send taps, swipes, keystrokes, and text to the device
 - Inspect the current activity, fragment backstack, and memory stats
@@ -46,7 +47,7 @@ adbridge runs as a **standalone CLI** or as an **MCP server** that exposes your 
   brew install tesseract
   ```
 
-### From source
+### From crates.io
 
 ```sh
 cargo install adbridge
@@ -80,6 +81,9 @@ adbridge screen --ocr
 
 # Full context: screenshot + OCR + view hierarchy as JSON
 adbridge screen --ocr --hierarchy --json
+
+# Parsed interactive UI elements with tap coordinates
+adbridge screen --elements
 ```
 
 ### Logcat
@@ -151,7 +155,7 @@ adbridge exposes 6 tools over MCP's stdio transport:
 
 | Tool | Description |
 |------|-------------|
-| `device_screenshot` | Capture screenshot with optional OCR and view hierarchy |
+| `device_screenshot` | Screenshot (JPEG, downscaled) + UI elements by default; optional OCR and raw hierarchy |
 | `device_logcat` | Filtered logcat entries by app, tag, and level |
 | `device_state` | Current activity, fragment backstack, display, memory |
 | `device_input` | Send text, taps, swipes, keys, or clipboard to device |
@@ -195,10 +199,20 @@ adbridge serve
 
 - **ADB communication** via [`adb_client`](https://crates.io/crates/adb_client), native Rust ADB protocol with no `adb` binary dependency (ADB server still required)
 - **OCR** via [`leptess`](https://crates.io/crates/leptess), FFI bindings to Tesseract/Leptonica
+- **Image processing** via [`image`](https://crates.io/crates/image) for JPEG compression and downscaling
 - **MCP server** via [`rmcp`](https://crates.io/crates/rmcp), the official Rust MCP SDK
 - **CLI** via [`clap`](https://crates.io/crates/clap)
 
 All device commands go through `adb shell` under the hood. The tool structures the raw output into JSON that AI assistants can reason about.
+
+### Token optimization
+
+The MCP server is designed to minimize token usage when communicating with AI assistants:
+
+- **Screenshots** are downscaled to 720px width and compressed to JPEG (80% quality) instead of full-resolution PNG
+- **View hierarchy** XML is stripped of default/false attributes (checkable="false", enabled="true", empty strings, etc.), typically reducing size by 50%+
+- **OCR output** is post-processed to remove noise lines (garbage from non-text screens like wallpapers)
+- **UI elements** are auto-included by default as a compact, structured alternative to raw hierarchy XML
 
 ## Project Structure
 
@@ -209,7 +223,9 @@ src/
 ├── adb/
 │   ├── mod.rs         Core ADB shell commands
 │   └── connection.rs  Device discovery and info
-├── screen/mod.rs      Screenshot, OCR, view hierarchy
+├── screen/
+│   ├── mod.rs         Screenshot, OCR, hierarchy stripping, image compression
+│   └── elements.rs    UI element parser (view hierarchy to compact format)
 ├── logcat/mod.rs      Log parsing and filtering
 ├── input/mod.rs       Text, tap, swipe, key, clipboard
 ├── state/mod.rs       Activity state, memory, crash reports
