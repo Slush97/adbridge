@@ -76,7 +76,10 @@ pub struct ScreenshotParams {
     #[serde(default, deserialize_with = "bool_from_string_or_bool")]
     pub hierarchy: bool,
     /// Whether to include parsed interactive UI elements with tap coordinates (default: true)
-    #[serde(default = "default_true", deserialize_with = "bool_from_string_or_bool")]
+    #[serde(
+        default = "default_true",
+        deserialize_with = "bool_from_string_or_bool"
+    )]
     pub elements: bool,
     /// Return full-resolution PNG instead of compressed JPEG (default: false)
     #[serde(default, deserialize_with = "bool_from_string_or_bool")]

@@ -1,5 +1,11 @@
 # adbridge
 
+[![Crates.io](https://img.shields.io/crates/v/adbridge)](https://crates.io/crates/adbridge)
+[![docs.rs](https://img.shields.io/docsrs/adbridge)](https://docs.rs/adbridge)
+[![CI](https://github.com/Slush97/adbridge/actions/workflows/ci.yml/badge.svg)](https://github.com/Slush97/adbridge/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![MSRV](https://img.shields.io/badge/MSRV-1.75-orange.svg)](https://www.rust-lang.org)
+
 Android Bridge for AI-Assisted Development. A CLI tool and MCP server that gives AI coding assistants direct access to your Android device: screenshots, OCR, logcat, input control, and device state inspection.
 
 No more manually screenshotting, copy-pasting logs, or describing what's on screen. Just ask your AI assistant to look at the device.
@@ -148,7 +154,7 @@ adbridge crash --json | claude "what caused this crash?"
 
 ## MCP Server
 
-adbridge exposes 6 tools over MCP's stdio transport:
+adbridge exposes 7 tools over MCP's stdio transport:
 
 | Tool | Description |
 |------|-------------|
@@ -157,6 +163,7 @@ adbridge exposes 6 tools over MCP's stdio transport:
 | `device_state` | Current activity, fragment backstack, display, memory |
 | `device_input` | Send text, taps, swipes, keys, or clipboard to device |
 | `device_info` | List connected devices with model and version info |
+| `device_shell` | Run a raw ADB shell command (e.g. `getprop`, `pm list`, `dumpsys`) |
 | `device_crash_report` | Stacktrace + screenshot + recent errors |
 
 ### Claude Code
@@ -226,7 +233,7 @@ src/
 ├── logcat/mod.rs      Log parsing and filtering
 ├── input/mod.rs       Text, tap, swipe, key, clipboard
 ├── state/mod.rs       Activity state, memory, crash reports
-└── mcp/mod.rs         MCP server with 6 tools (stdio)
+└── mcp/mod.rs         MCP server with 7 tools (stdio)
 ```
 
 ## License
