@@ -70,6 +70,9 @@ pub struct ScreenshotParams {
     /// Whether to include parsed interactive UI elements with tap coordinates
     #[serde(default, deserialize_with = "bool_from_string_or_bool")]
     pub elements: bool,
+    /// Return full-resolution PNG instead of compressed JPEG (default: false)
+    #[serde(default, deserialize_with = "bool_from_string_or_bool")]
+    pub full_resolution: bool,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -105,6 +108,12 @@ pub struct InputParams {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+pub struct ShellParams {
+    /// Shell command to execute on the device (e.g., "getprop ro.build.fingerprint")
+    pub command: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct CrashParams {}
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -124,23 +133,16 @@ impl AbridgeMcp {
 
         let mut contents = Vec::new();
 
-        // Compress to JPEG at 720px width for lower token usage
-        let image_data =
-            crate::screen::compress_screenshot(&png_data, 720, 80).unwrap_or_else(|_| {
-                // Fall back to original PNG if compression fails
-                png_data.clone()
-            });
-        let (mime, b64) = if image_data.starts_with(b"\xff\xd8") {
-            (
-                "image/jpeg",
-                base64::engine::general_purpose::STANDARD.encode(&image_data),
-            )
+        // Return full-res PNG or compressed JPEG based on flag
+        let (image_data, mime) = if params.full_resolution {
+            (png_data.clone(), "image/png")
         } else {
-            (
-                "image/png",
-                base64::engine::general_purpose::STANDARD.encode(&image_data),
-            )
+            match crate::screen::compress_screenshot(&png_data, 720, 80) {
+                Ok(jpeg) => (jpeg, "image/jpeg"),
+                Err(_) => (png_data.clone(), "image/png"),
+            }
         };
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&image_data);
         contents.push(Content::image(b64, mime));
 
         // OCR text (cleaned to remove noise lines)
@@ -304,6 +306,17 @@ impl AbridgeMcp {
         let report = crate::state::get_crash_report(true).map_err(crate::mcp::mcp_err)?;
         let json = serde_json::to_string_pretty(&report).map_err(crate::mcp::mcp_err)?;
         Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(
+        description = "Run a raw ADB shell command on the device. Use for one-off queries not covered by other tools (e.g., getprop, pm list, dumpsys). Returns stdout as text."
+    )]
+    async fn device_shell(
+        &self,
+        Parameters(params): Parameters<ShellParams>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let output = crate::adb::shell_str(&params.command).map_err(crate::mcp::mcp_err)?;
+        Ok(CallToolResult::success(vec![Content::text(output)]))
     }
 }
 
